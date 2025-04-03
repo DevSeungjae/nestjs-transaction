@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.json",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint \"src/**/*.ts\" --fix",
+    "test": "jest",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "prepublishOnly": "pnpm run build"
+  }
+}
