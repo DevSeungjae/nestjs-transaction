@@ -12,6 +12,8 @@ export enum IsolationLevel {
   READ_COMMITTED = 'READ COMMITTED',
   REPEATABLE_READ = 'REPEATABLE READ',
   SERIALIZABLE = 'SERIALIZABLE',
+  // Additional options
+  SNAPSHOT = 'SNAPSHOT',
 }
 
 export interface TransactionOptions {

@@ -25,50 +25,50 @@ export class TransactionInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<any>> {
-    // 메서드에서 트랜잭션 옵션 가져오기
+    // Get transaction options from method
     const options = this.reflector.get<TransactionOptions>(
       TRANSACTION_METADATA_KEY,
       context.getHandler(),
     );
 
-    // @Transactional() 데코레이터가 없으면 인터셉트 없이 진행
+    // If no @Transactional() decorator, proceed without intercepting
     if (!options) {
       return next.handle();
     }
 
-    // 옵션 병합
+    // Merge options
     const mergedOptions = { ...this.defaultOptions, ...options };
 
-    // 트랜잭션이 이미 활성화되어 있는지 확인
+    // Check if transaction is already active
     const isTransactionActive = this.unitOfWork.isTransactionActive();
 
-    // 트랜잭션 시작
+    // Start transaction
     const trx = await this.unitOfWork.begin(mergedOptions);
 
-    // 컨텍스트 타입에 따른 처리
+    // Handle based on context type
     if (context.getType() === 'http') {
-      // HTTP 요청인 경우 트랜잭션을 요청 객체에 추가
+      // For HTTP requests, add transaction to request object
       const request = context.switchToHttp().getRequest();
       request.transaction = trx;
     } else if (context.getType() === 'ws') {
-      // WebSocket 클라이언트에 트랜잭션 추가
+      // Add transaction to WebSocket client
       const client = context.switchToWs().getClient();
       client.data = client.data || {};
       client.data.transaction = trx;
     } else if (context.getType() === 'rpc') {
-      // RPC 컨텍스트에 트랜잭션 추가
+      // Add transaction to RPC context
       const ctx = context.switchToRpc().getContext();
       ctx.transaction = trx;
     }
 
     return next.handle().pipe(
-      // 성공 시 커밋 (자신이 시작한 트랜잭션만)
+      // On success, commit (only if this interceptor started the transaction)
       tap(async () => {
         if (!isTransactionActive && this.unitOfWork.isTransactionActive()) {
           await this.unitOfWork.commit();
         }
       }),
-      // 실패 시 롤백 (자신이 시작한 트랜잭션만)
+      // On error, rollback (only if this interceptor started the transaction)
       catchError(async (err) => {
         if (!isTransactionActive && this.unitOfWork.isTransactionActive()) {
           await this.unitOfWork.rollback();

@@ -14,31 +14,31 @@ export abstract class AbstractUnitOfWork<T = any> implements IUnitOfWork<T> {
   };
 
   /**
-   * 트랜잭션 객체 생성 (구현 클래스에서 오버라이드)
+   * Create transaction object (override in implementation class)
    */
   protected abstract createTransaction(options?: TransactionOptions): Promise<T>;
 
   /**
-   * 트랜잭션 커밋 (구현 클래스에서 오버라이드)
+   * Commit transaction (override in implementation class)
    */
   protected abstract commitTransaction(transaction: T): Promise<void>;
 
   /**
-   * 트랜잭션 롤백 (구현 클래스에서 오버라이드)
+   * Rollback transaction (override in implementation class)
    */
   protected abstract rollbackTransaction(transaction: T): Promise<void>;
 
   /**
-   * 새 트랜잭션 시작 또는 기존 트랜잭션 반환
+   * Start new transaction or return existing transaction
    */
   async begin(options?: TransactionOptions): Promise<T> {
     const mergedOptions = { ...this.options, ...options };
 
-    // 트랜잭션 전파 로직
+    // Transaction propagation logic
     if (this.transaction) {
       switch (mergedOptions.propagation) {
         case TransactionPropagation.REQUIRES_NEW:
-          // 항상 새 트랜잭션 생성 (중첩 트랜잭션)
+          // Always create new transaction (nested transaction)
           return this.createTransaction(mergedOptions);
         
         case TransactionPropagation.NOT_SUPPORTED:
@@ -46,22 +46,22 @@ export abstract class AbstractUnitOfWork<T = any> implements IUnitOfWork<T> {
           throw new Error(`Transaction already active but propagation is ${mergedOptions.propagation}`);
         
         default:
-          // 기존 트랜잭션 사용
+          // Use existing transaction
           return this.transaction;
       }
     } else {
-      // 트랜잭션이 없는 상태
+      // No active transaction
       switch (mergedOptions.propagation) {
         case TransactionPropagation.MANDATORY:
           throw new Error('No existing transaction found for propagation MANDATORY');
         
         case TransactionPropagation.NOT_SUPPORTED:
         case TransactionPropagation.NEVER:
-          // 트랜잭션 없이 진행
+          // Proceed without transaction
           return null as any;
         
         default:
-          // 새 트랜잭션 생성
+          // Create new transaction
           this.transaction = await this.createTransaction(mergedOptions);
           return this.transaction;
       }
@@ -69,7 +69,7 @@ export abstract class AbstractUnitOfWork<T = any> implements IUnitOfWork<T> {
   }
 
   /**
-   * 현재 트랜잭션 커밋
+   * Commit current transaction
    */
   async commit(): Promise<void> {
     if (!this.transaction) {
@@ -81,7 +81,7 @@ export abstract class AbstractUnitOfWork<T = any> implements IUnitOfWork<T> {
   }
 
   /**
-   * 현재 트랜잭션 롤백
+   * Rollback current transaction
    */
   async rollback(): Promise<void> {
     if (!this.transaction) {
@@ -93,21 +93,21 @@ export abstract class AbstractUnitOfWork<T = any> implements IUnitOfWork<T> {
   }
 
   /**
-   * 현재 활성화된 트랜잭션 반환
+   * Get current active transaction
    */
   async getTransaction(): Promise<T | null> {
     return this.transaction;
   }
 
   /**
-   * 트랜잭션 활성화 여부 확인
+   * Check if transaction is active
    */
   isTransactionActive(): boolean {
     return this.transaction !== null;
   }
 
   /**
-   * 콜백 함수를 트랜잭션 내에서 실행
+   * Execute callback function within transaction
    */
   async executeInTransaction<R>(
     callback: (transaction: T) => Promise<R>,
@@ -119,14 +119,14 @@ export abstract class AbstractUnitOfWork<T = any> implements IUnitOfWork<T> {
     try {
       const result = await callback(transaction);
       
-      // 최상위 트랜잭션만 커밋
+      // Only commit outermost transaction
       if (isOuterTransaction) {
         await this.commit();
       }
       
       return result;
     } catch (error) {
-      // 최상위 트랜잭션만 롤백
+      // Only rollback outermost transaction
       if (isOuterTransaction && this.isTransactionActive()) {
         await this.rollback();
       }
