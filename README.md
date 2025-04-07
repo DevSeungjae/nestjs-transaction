@@ -1,13 +1,15 @@
-# nestjs-transaction
+# nestjs-transactional
+
+> ⚠️ **Under Development**: This library is currently under development. Do not use in production environments.
 
 A declarative transaction management library for NestJS
 
-[![NPM Version](https://img.shields.io/npm/v/nestjs-transaction.svg)](https://www.npmjs.com/package/nestjs-transaction)
-[![License](https://img.shields.io/npm/l/nestjs-transaction.svg)](LICENSE)
+[![NPM Version](https://img.shields.io/npm/v/nestjs-transactional.svg)](https://www.npmjs.com/package/nestjs-transactional)
+[![License](https://img.shields.io/npm/l/nestjs-transactional.svg)](LICENSE)
 
 ## Overview
 
-`nestjs-transaction` is a library that enables declarative database transaction management in NestJS applications. It uses decorators and AOP (Aspect-Oriented Programming) approach to separate transaction management code from business logic.
+`nestjs-transactional` is a library that enables declarative database transaction management in NestJS applications. It uses decorators and AOP (Aspect-Oriented Programming) approach to separate transaction management code from business logic.
 
 ## Key Features
 
@@ -22,7 +24,7 @@ A declarative transaction management library for NestJS
 ## Installation
 
 ```bash
-npm install nestjs-transaction --save
+npm install nestjs-transactional --save
 ```
 
 ## Quick Start
@@ -33,7 +35,7 @@ npm install nestjs-transaction --save
 // app.module.ts
 import { Module } from '@nestjs/common';
 import { KnexModule } from 'nest-knexjs';
-import { KnexTransactionModule } from 'nestjs-transaction';
+import { KnexTransactionModule } from 'nestjs-transactional';
 
 @Module({
   imports: [
@@ -62,7 +64,7 @@ export class AppModule {}
 ```typescript
 // user.service.ts
 import { Injectable } from '@nestjs/common';
-import { Transactional, Transaction } from 'nestjs-transaction';
+import { Transactional, Transaction } from 'nestjs-transactional';
 import { Knex } from 'knex';
 
 @Injectable()
@@ -87,7 +89,7 @@ import {
   Transaction,
   TransactionPropagation,
   IsolationLevel
-} from 'nestjs-transaction';
+} from 'nestjs-transactional';
 import { Knex } from 'knex';
 
 @Injectable()
