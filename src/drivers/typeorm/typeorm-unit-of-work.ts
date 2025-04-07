@@ -22,7 +22,7 @@ export class TypeOrmUnitOfWork extends AbstractUnitOfWork {
     this.queryRunner = this.dataSource.createQueryRunner();
     await this.queryRunner.connect();
 
-    // 격리 수준 설정
+    // Set isolation level
     let isolationLevel: TypeOrmIsolationLevel | undefined;
 
     if (options?.isolation) {
@@ -62,20 +62,20 @@ export class TypeOrmUnitOfWork extends AbstractUnitOfWork {
       
     }
 
-    // 타임아웃 설정 (지원되는 데이터베이스에서만 작동)
+    // Set timeout (works only on supported databases)
     if (options?.timeout) {
       const driverType = this.dataSource.driver.options.type as string;
 
       try {
-        // Postgres 에서 명시적 트랜잭션 타임아웃 설정
+        // Set explicit transaction timeout for Postgres
         if (driverType === 'postgres') {
           await this.queryRunner.query(`SET statement_timeout = ${options.timeout}`);
         }
-        // MySQL 과 MariaDB 에서 명시적 트랜잭션 타임아웃 설정
+        // Set explicit transaction timeout for MySQL and MariaDB
         else if (driverType === 'mysql' || driverType === 'mariadb') {
           await this.queryRunner.query(`SET innodb_lock_wait_timeout = ${Math.ceil(options.timeout / 1000)}`);
         }
-        // MSSQL 에서 명시적 트랜잭션 타임아웃 설정
+        // Set explicit transaction timeout for MSSQL
         else if (driverType === 'mssql') {
           await this.queryRunner.query(`SET LOCK_TIMEOUT ${options.timeout}`);
         }
@@ -89,7 +89,7 @@ export class TypeOrmUnitOfWork extends AbstractUnitOfWork {
   }
 
   /**
-   * TypeORM 트랜젝션 커밋
+   * Commit TypeORM transaction
    */
   protected async commitTransaction(
     transaction: EntityManager,
@@ -103,11 +103,17 @@ export class TypeOrmUnitOfWork extends AbstractUnitOfWork {
   }
 
   /**
-   * TypeORM 트랜젝션 롤백
+   * Rollback TypeORM transaction
    */
   protected async rollbackTransaction(
-    transaction: 
+    transaction: EntityManager
   ) {
+    if (!this.queryRunner) {
+      throw Error('No active QueryRunner Found')
+    }
 
+    await this.queryRunner.rollbackTransaction();
+    await this.queryRunner.release();
+    this.queryRunner = null;
   }
 }

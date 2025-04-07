@@ -77,7 +77,7 @@ export function mapIsolationLevelForDriver(
     return undefined;
   }
   
-  // 격리 수준 매핑
+  // Isolation level mapping
   switch (isolationLevel) {
     case IsolationLevel.READ_UNCOMMITTED:
       return 'READ UNCOMMITTED';
