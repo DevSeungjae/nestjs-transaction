@@ -1,14 +1,14 @@
 import {
+  CallHandler,
+  ExecutionContext,
+  Inject,
   Injectable,
   NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Inject,
   Optional,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
-import { Reflector } from '@nestjs/core';
 import { IUnitOfWork, TransactionOptions } from '../interfaces';
 import { TRANSACTION_MANAGER, TRANSACTION_METADATA_KEY } from '../providers';
 
@@ -31,7 +31,7 @@ export class TransactionInterceptor implements NestInterceptor {
       context.getHandler(),
     );
 
-    // If no @Transactional() decorator, proceed without intercepting
+    // If no @Transactional() decorator, proceed without transaction
     if (!options) {
       return next.handle();
     }
@@ -42,8 +42,11 @@ export class TransactionInterceptor implements NestInterceptor {
     // Check if transaction is already active
     const isTransactionActive = this.unitOfWork.isTransactionActive();
 
-    // Start transaction
-    const trx = await this.unitOfWork.begin(mergedOptions);
+    // Start transaction only if not already active
+    let trx;
+    if (!isTransactionActive) {
+      trx = await this.unitOfWork.begin(mergedOptions);
+    }
 
     // Handle based on context type
     if (context.getType() === 'http') {
